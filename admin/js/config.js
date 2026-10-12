@@ -14,6 +14,7 @@
 window.FLY_CONFIG = {
   SUPABASE_URL: 'https://wpwqmiefneagvudisapn.supabase.co',      // ex. https://xxxxxxxxxxxx.supabase.co
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3FtaWVmbmVhZ3Z1ZGlzYXBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4MTA3MzIsImV4cCI6MjEwNzM4NjczMn0.nc-8o45mwTTaglMLZCYytGguWTS7zGhPp6QIF20vxYY',
+  PREVIEW: true,   // TEMPORAIRE : aperçu sans connexion (lecture seule). Mettre false ou supprimer pour réactiver la connexion.
   CURRENCY: 'EUR',
   LOCALE: 'fr-FR'
 };

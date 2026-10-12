@@ -192,8 +192,18 @@
     // Garde d'authentification : le dashboard n'apparaît qu'après connexion.
     if (w.API.configured) {
       const profile = await w.API.profile();
-      if (!profile) { location.replace('login.html'); return; }
-      if (!['admin', 'staff'].includes(profile.role)) {
+      const isStaff = profile && ['admin', 'staff'].includes(profile.role);
+      // MODE APERÇU (temporaire) : FLY_CONFIG.PREVIEW = true laisse voir l'interface sans
+      // connexion. Aucune donnée privée n'est exposée : la base reste protégée (RLS) et
+      // toute écriture est refusée côté serveur. À retirer une fois les admins validés.
+      if (w.FLY_CONFIG.PREVIEW && !isStaff) {
+        els.who.innerHTML = '<strong>Mode aperçu</strong>Lecture seule';
+        const bar = d.createElement('div');
+        bar.style.cssText = 'background:#FFF4D6;color:#6B4A00;padding:9px 16px;font-size:.85rem;text-align:center;border-bottom:1px solid #F0DDA5';
+        bar.textContent = 'Mode aperçu — l’interface est visible sans connexion, mais rien ne peut être enregistré. Connectez-vous pour créer de vrais événements.';
+        d.body.prepend(bar);
+      } else if (!profile) { location.replace('login.html'); return; }
+      else if (!isStaff) {
         d.body.innerHTML = `<div class="login-page"><div class="login-card">
             <h1>Accès refusé</h1>
             <p class="sub">Ce compte n’a pas les droits d’administration.</p>
@@ -201,7 +211,7 @@
           </div></div>`;
         return;
       }
-      els.who.innerHTML = `<strong>${w.UI.esc(profile.full_name || profile.email)}</strong>${profile.role}`;
+      if (isStaff) els.who.innerHTML = `<strong>${w.UI.esc(profile.full_name || profile.email)}</strong>${profile.role}`;
     } else {
       els.who.innerHTML = '<strong>Mode démo</strong>Supabase non connecté';
     }
