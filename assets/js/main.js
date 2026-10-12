@@ -62,3 +62,10 @@
     play.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); start(); } });
   });
 })();
+
+/* Contact : préremplit le sujet depuis ?sujet= (lien « Réserver » des évènements) */
+(function () {
+  var f = document.querySelector('input[name="sujet"]');
+  var v = new URLSearchParams(location.search).get('sujet');
+  if (f && v && !f.value) f.value = v.slice(0, 120);
+})();

@@ -411,3 +411,13 @@ section{padding:86px 0}
 .press-stats span{font-family:'Barlow Condensed',sans-serif;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .press-meta{margin-top:14px;font-size:.82rem;color:var(--muted)}
 @media(max-width:860px){.press-grid{grid-template-columns:1fr;gap:26px}.press-photo img{aspect-ratio:4/3;object-position:center 20%}.press-stats{grid-template-columns:repeat(2,1fr)}}
+
+/* Évènements publiés (Supabase) */
+.event-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.event-cover{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px}
+.event-row-static{width:100%;border:0;padding:0;box-shadow:none;transform:none!important;background:none}
+.event-tag{font-family:'Barlow Condensed',sans-serif;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--navy)}
+.event-lead{font-weight:600}
+.event-desc{color:var(--muted);font-size:.95rem}
+.event-tickets{list-style:none;width:100%;display:grid;gap:6px}
+.event-tickets li{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;background:var(--ice);border-radius:8px;font-size:.92rem}

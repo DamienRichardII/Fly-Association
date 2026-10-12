@@ -105,7 +105,7 @@
            { label:'Billets', num:true }, { label:'CA', num:true }],
     fetch: (s) => w.API.events(s.tab === 'all' ? null : s.tab, s.q),
     emptyText: 'Créez votre premier événement : billetterie ou simple inscription.',
-    row: (e) => `<tr>
+    row: (e) => `<tr data-nav="#/events/edit/${esc(e.id)}">
         <td><div style="display:flex;align-items:center;gap:11px">
           ${e.cover_url
             ? `<img src="${esc(e.cover_url)}" alt="" style="width:42px;height:42px;border-radius:8px;object-fit:cover;flex:none">`

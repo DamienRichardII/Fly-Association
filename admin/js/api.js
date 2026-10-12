@@ -79,6 +79,25 @@
       search: { columns: ['title'], value: search },
       order: { column: 'start_at', ascending: false }
     }),
+    event:        (id) => selectOne('events', id),
+    eventTickets: (eventId) => select('event_ticket_types', {
+      filters: [['event_id', 'eq', eventId]], order: { column: 'position', ascending: true }
+    }),
+    saveEvent: (id, event, tickets) => rpc('admin_save_event', {
+      p_id: id || null, p_event: event, p_tickets: tickets || []
+    }),
+    async deleteTicketTypes(ids) {
+      if (!client) throw new Error('Supabase non connecté');
+      const { error } = await client.from('event_ticket_types').delete().in('id', ids);
+      if (error) throw new Error(error.message);
+    },
+    async uploadMedia(blob) {
+      if (!client) throw new Error('Supabase non connecté');
+      const path = `events/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error } = await client.storage.from('media').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+      if (error) throw new Error(error.message);
+      return client.storage.from('media').getPublicUrl(path).data.publicUrl;
+    },
     contacts: (search, tag) => select('contacts_overview', {
       filters: tag && tag !== 'all' ? [['tags', 'cs', `{${tag}}`]] : [],
       search: { columns: ['first_name', 'last_name', 'email'], value: search },

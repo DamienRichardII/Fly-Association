@@ -299,3 +299,8 @@ l'authentification Supabase ne fonctionne pas en `file://`.
 
 À la fin de chaque phase : vérification desktop, mobile, absence de régression
 sur les 9 pages publiques.
+
+## Phase C — Création d'événements (back-office → site public)
+- `admin/js/events-wizard.js` : assistant 5 étapes (Type → Infos & lieu → Inscriptions/Billets → Visuel & texte → Publication), création et édition (`#/events/edit/:id`). Écriture via la RPC `admin_save_event`; images dans le bucket public `media`.
+- Public : `assets/js/events.js` lit les événements `published` à venir (RLS `public_read`) et alimente `evenements.html` (fiches complètes + tarifs) et l'accueil (3 prochains). Sans événement, l'état vide statique reste affiché.
+- Billets payants : pas de paiement en ligne tant que le prestataire n'est pas choisi ; le bouton mène à `contact.html?sujet=…`.

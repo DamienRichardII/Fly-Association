@@ -70,6 +70,9 @@
     if (parts[0] === 'contacts' && parts[1] && parts[1] !== 'new') {
       return { key: 'contacts/detail', params: { id: parts[1] } };
     }
+    if (parts[0] === 'events' && parts[1] === 'edit' && parts[2]) {
+      return { key: 'events/edit', params: { id: parts[2] } };
+    }
     return { key: raw, params: {} };
   }
 
