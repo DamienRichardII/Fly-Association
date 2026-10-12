@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Connexion · Back-office Le Fly</title>
+<link rel="icon" href="../assets/img/logo-navy.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="login-page">
+  <form class="login-card" id="loginForm">
+    <img src="../assets/img/logo-navy.png" alt="Le Fly Association">
+    <h1>Back-office</h1>
+    <p class="sub">Espace réservé à l'équipe Le Fly</p>
+
+    <div class="form-error" id="error" hidden></div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+    </div>
+
+    <button type="submit" class="btn btn-navy" id="submit">Se connecter</button>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var form = document.getElementById('loginForm');
+  var err  = document.getElementById('error');
+  var btn  = document.getElementById('submit');
+
+  function fail(msg) { err.textContent = msg; err.hidden = false; }
+
+  if (!window.API.configured) {
+    fail("Supabase n'est pas encore connecté. Renseignez admin/js/config.js.");
+    btn.disabled = true;
+  } else {
+    // Déjà connecté : on va directement au dashboard
+    window.API.currentUser().then(function (u) { if (u) location.replace('index.html'); });
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    err.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Connexion…';
+    try {
+      var res = await window.API.signIn(form.email.value.trim(), form.password.value);
+      if (res.error) throw res.error;
+      var profile = await window.API.profile();
+      if (!profile || ['admin', 'staff'].indexOf(profile.role) === -1) {
+        await window.API.signOut();
+        throw new Error("Ce compte n'a pas accès à l'administration.");
+      }
+      location.replace('index.html');
+    } catch (e2) {
+      fail(e2.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : e2.message);
+      btn.disabled = false;
+      btn.textContent = 'Se connecter';
+    }
+  });
+})();
+</script>
+</body>
+</html>
