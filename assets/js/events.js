@@ -39,7 +39,7 @@
     var tickets = (ev.event_ticket_types || []).map(function (t) {
       return '<li><span>' + esc(t.name) + '</span><strong>' + (t.is_free ? 'Gratuit' : esc(euro(t.price_cents))) + '</strong></li>';
     }).join('');
-    var cta = ev.kind === 'rsvp' ? 'S’inscrire' : 'Réserver ma place';
+    var cta = 'S’inscrire';
     var types = (ev.event_ticket_types || []).slice().sort(function (a, b) { return a.position - b.position; });
     var form = '<form class="event-form" data-event="' + esc(ev.id) + '" hidden>' +
       (types.length ? '<select name="type" required><option value="">Catégorie…</option>' + types.map(function (t) {
