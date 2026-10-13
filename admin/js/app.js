@@ -73,6 +73,9 @@
     if (parts[0] === 'events' && parts[1] === 'edit' && parts[2]) {
       return { key: 'events/edit', params: { id: parts[2] } };
     }
+    if (parts[0] === 'events' && parts[1] === 'participants' && parts[2]) {
+      return { key: 'events/participants', params: { id: parts[2] } };
+    }
     return { key: raw, params: {} };
   }
 

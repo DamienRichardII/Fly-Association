@@ -421,3 +421,14 @@ section{padding:86px 0}
 .event-desc{color:var(--muted);font-size:.95rem}
 .event-tickets{list-style:none;width:100%;display:grid;gap:6px}
 .event-tickets li{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;background:var(--ice);border-radius:8px;font-size:.92rem}
+
+/* Inscription aux évènements */
+.event-form{width:100%;display:grid;gap:10px;margin-top:4px}
+.event-form[hidden]{display:none}
+.event-form input,.event-form select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+.event-form input:focus,.event-form select:focus{outline:none;border-color:var(--navy)}
+.event-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.event-form-msg{font-size:.88rem;color:var(--muted);margin:0}
+.event-form-msg.ok{color:#1E7A46}
+.event-form-msg.err{color:#B3261E}
+@media(max-width:560px){.event-form-row{grid-template-columns:1fr}}

@@ -86,6 +86,17 @@
     saveEvent: (id, event, tickets) => rpc('admin_save_event', {
       p_id: id || null, p_event: event, p_tickets: tickets || []
     }),
+    eventAttendees: (eventId) => select('event_attendees', {
+      columns: '*, contacts(first_name,last_name,email,phone), event_ticket_types(name,price_cents)',
+      filters: [['event_id', 'eq', eventId]], order: { column: 'registered_at', ascending: true }, limit: 1000
+    }),
+    addAttendee: (eventId, a) => rpc('admin_add_attendee', {
+      p_event: eventId, p_ticket_type: a.ticket_type_id || null, p_first: a.first_name, p_last: a.last_name,
+      p_email: a.email, p_phone: a.phone || null, p_notes: a.notes || null
+    }),
+    updateAttendee: (id, a) => rpc('admin_update_attendee', {
+      p_id: id, p_status: a.status, p_paid: !!a.paid, p_payment_method: a.payment_method || null, p_notes: a.notes || null
+    }),
     async deleteTicketTypes(ids) {
       if (!client) throw new Error('Supabase non connecté');
       const { error } = await client.from('event_ticket_types').delete().in('id', ids);

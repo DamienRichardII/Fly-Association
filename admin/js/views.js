@@ -102,7 +102,7 @@
            { id:'draft', label:'Brouillons' }, { id:'past', label:'Passés' }],
     action: { id:'create-event', label:'Créer un événement' },
     head: ['Événement', 'Date', 'Statut', { label:'Inscrits', num:true },
-           { label:'Billets', num:true }, { label:'CA', num:true }],
+           { label:'Billets', num:true }, { label:'CA', num:true }, ''],
     fetch: (s) => w.API.events(s.tab === 'all' ? null : s.tab, s.q),
     emptyText: 'Créez votre premier événement : billetterie ou simple inscription.',
     row: (e) => `<tr data-nav="#/events/edit/${esc(e.id)}">
@@ -117,6 +117,7 @@
         <td class="num">${e.attendees_count}</td>
         <td class="num">${e.tickets_sold}${e.tickets_available ? ` <span class="cell-sub">/ ${e.tickets_sold + e.tickets_available}</span>` : ''}</td>
         <td class="num">${esc(fmtMoney(e.revenue_cents))}</td>
+        <td><a class="btn btn-ghost btn-sm" href="#/events/participants/${esc(e.id)}">Participants</a></td>
       </tr>`
   });
 

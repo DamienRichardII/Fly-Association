@@ -40,6 +40,14 @@
       return '<li><span>' + esc(t.name) + '</span><strong>' + (t.is_free ? 'Gratuit' : esc(euro(t.price_cents))) + '</strong></li>';
     }).join('');
     var cta = ev.kind === 'rsvp' ? 'S’inscrire' : 'Réserver ma place';
+    var types = (ev.event_ticket_types || []).slice().sort(function (a, b) { return a.position - b.position; });
+    var form = '<form class="event-form" data-event="' + esc(ev.id) + '" hidden>' +
+      (types.length ? '<select name="type" required><option value="">Catégorie…</option>' + types.map(function (t) {
+        return '<option value="' + esc(t.id) + '">' + esc(t.name) + (t.is_free ? '' : ' — ' + euro(t.price_cents)) + '</option>'; }).join('') + '</select>' : '') +
+      '<div class="event-form-row"><input name="first" placeholder="Prénom" required><input name="last" placeholder="Nom" required></div>' +
+      '<input name="email" type="email" placeholder="Email" required><input name="phone" type="tel" placeholder="Téléphone">' +
+      '<button class="btn btn-navy btn-sm" type="submit">Valider mon inscription</button>' +
+      '<p class="event-form-msg" role="status"></p></form>';
     return '<article class="event-card">' +
       (ev.cover_url ? '<img class="event-cover" src="' + esc(ev.cover_url) + '" alt="" loading="lazy">' : '') +
       '<div class="event-row event-row-static">' + head + '</div>' +
@@ -47,10 +55,33 @@
       (ev.short_description ? '<p class="event-lead">' + esc(ev.short_description) + '</p>' : '') +
       (ev.description ? '<p class="event-desc">' + esc(ev.description).replace(/\n/g, '<br>') + '</p>' : '') +
       (tickets ? '<ul class="event-tickets">' + tickets + '</ul>' : '') +
-      '<a class="btn btn-navy btn-sm" href="contact.html?sujet=' + encodeURIComponent(ev.title) + '">' + cta + '</a></article>';
+      '<button type="button" class="btn btn-navy btn-sm" data-register>' + cta + '</button>' + form + '</article>';
   }
 
-  var q = URL_ + '/rest/v1/events?select=id,title,kind,category,short_description,description,cover_url,start_at,end_at,location_type,venue_name,city,event_ticket_types(name,is_free,price_cents,position)' +
+  host.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-register]');
+    if (b) { var f = b.parentNode.querySelector('.event-form'); f.hidden = !f.hidden; }
+  });
+  host.addEventListener('submit', function (e) {
+    var f = e.target.closest('.event-form'); if (!f) return;
+    e.preventDefault();
+    var msg = f.querySelector('.event-form-msg'), btn = f.querySelector('button[type=submit]'), v = function (n) { var x = f.elements[n]; return x ? x.value : ''; };
+    btn.disabled = true; msg.className = 'event-form-msg'; msg.textContent = 'Envoi…';
+    fetch(URL_ + '/rest/v1/rpc/register_for_event', {
+      method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_event: f.getAttribute('data-event'), p_ticket_type: v('type') || null,
+        p_first: v('first'), p_last: v('last'), p_email: v('email'), p_phone: v('phone') || null })
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error((r.j && r.j.message) || 'Inscription impossible');
+        f.reset(); msg.className = 'event-form-msg ok';
+        msg.textContent = 'Inscription enregistrée ! L’équipe du Fly vous recontacte pour la confirmation et le règlement.';
+      })
+      .catch(function (err) { msg.className = 'event-form-msg err'; msg.textContent = err.message; })
+      .then(function () { btn.disabled = false; });
+  });
+
+  var q = URL_ + '/rest/v1/events?select=id,title,kind,category,short_description,description,cover_url,start_at,end_at,location_type,venue_name,city,event_ticket_types(id,name,is_free,price_cents,position)' +
     '&status=eq.published&start_at=gte.' + encodeURIComponent(new Date(Date.now() - 6 * 3600e3).toISOString()) +
     '&order=start_at.asc&limit=' + (full ? 30 : 3);
   fetch(q, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } })
