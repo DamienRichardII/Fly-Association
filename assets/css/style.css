@@ -441,3 +441,7 @@ section{padding:86px 0}
 
 .event-card-focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(33,58,131,.15)}
 .event-card{scroll-margin-top:110px}
+
+/* Héro : logo du Fly à la place du titre typographique */
+.hero-logo{margin:4px 0 22px}
+.hero-logo img{display:block;width:clamp(170px,22vw,260px);height:auto}
