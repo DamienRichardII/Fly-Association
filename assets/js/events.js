@@ -34,7 +34,7 @@
       '<div class="event-meta">' + (where ? '<span>' + ICON_PIN + ' ' + esc(where) + '</span>' : '') +
       '<span>' + ICON_CLOCK + ' ' + esc(hour) + '</span>' + (price ? '<span>' + esc(price) + '</span>' : '') + '</div></div>';
     if (!full) {
-      return '<a class="event-row" href="evenements.html">' + head + '<div class="event-go">&rarr;</div></a>';
+      return '<a class="event-row" href="evenements.html#' + esc(ev.slug) + '">' + head + '<div class="event-go">&rarr;</div></a>';
     }
     var tickets = (ev.event_ticket_types || []).map(function (t) {
       return '<li><span>' + esc(t.name) + '</span><strong>' + (t.is_free ? 'Gratuit' : esc(euro(t.price_cents))) + '</strong></li>';
@@ -48,7 +48,7 @@
       '<input name="email" type="email" placeholder="Email" required><input name="phone" type="tel" placeholder="Téléphone">' +
       '<button class="btn btn-navy btn-sm" type="submit">Valider mon inscription</button>' +
       '<p class="event-form-msg" role="status"></p></form>';
-    return '<article class="event-card">' +
+    return '<article class="event-card" id="' + esc(ev.slug) + '" data-open="' + (ev.kind === 'ticketed' || ev.kind === 'rsvp' ? '1' : '') + '">' +
       (ev.cover_url ? '<img class="event-cover" src="' + esc(ev.cover_url) + '" alt="" loading="lazy">' : '') +
       '<div class="event-row event-row-static">' + head + '</div>' +
       (ev.category ? '<div class="event-tag">' + esc(ev.category) + '</div>' : '') +
@@ -81,7 +81,22 @@
       .then(function () { btn.disabled = false; });
   });
 
-  var q = URL_ + '/rest/v1/events?select=id,title,kind,category,short_description,description,cover_url,start_at,end_at,location_type,venue_name,city,event_ticket_types(id,name,is_free,price_cents,position)' +
+  /* Liens directs : evenements.html#inscription (1er évènement ouvert aux inscriptions)
+     ou evenements.html#<slug> (lien à mettre en bio) → formulaire déjà ouvert. */
+  function openFromHash() {
+    if (!full) return;
+    var h = decodeURIComponent((location.hash || '').slice(1));
+    if (!h) return;
+    var card = h === 'inscription' ? host.querySelector('.event-card[data-open="1"]') : document.getElementById(h);
+    if (!card) return;
+    var f = card.querySelector('.event-form');
+    if (f) f.hidden = false;
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    card.classList.add('event-card-focus');
+  }
+  window.addEventListener('hashchange', openFromHash);
+
+  var q = URL_ + '/rest/v1/events?select=id,slug,title,kind,category,short_description,description,cover_url,start_at,end_at,location_type,venue_name,city,event_ticket_types(id,name,is_free,price_cents,position)' +
     '&status=eq.published&start_at=gte.' + encodeURIComponent(new Date(Date.now() - 6 * 3600e3).toISOString()) +
     '&order=start_at.asc&limit=' + (full ? 30 : 3);
   fetch(q, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } })
@@ -92,6 +107,7 @@
       var html = list.map(row).join('');
       if (empty) empty.insertAdjacentHTML('beforebegin', html), empty.style.display = 'none';
       else host.insertAdjacentHTML('beforeend', html);
+      openFromHash();
     })
     .catch(function () { /* l'état vide reste affiché */ });
 })();
