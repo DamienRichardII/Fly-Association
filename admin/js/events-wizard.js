@@ -284,6 +284,7 @@
           ${RENDER[step](s)}
         </div>
         <div class="wz-nav">
+          ${s.id ? `<a class="btn btn-ghost" href="#/events/participants/${esc(s.id)}">Voir les participants</a>` : ''}
           ${step > 1 ? '<button type="button" class="btn btn-ghost" data-wz="prev">Retour</button>' : '<a class="btn btn-ghost" href="#/events">Annuler</a>'}
           <div style="flex:1"></div>
           ${step < 5

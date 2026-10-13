@@ -69,7 +69,7 @@
     toolbar: () => '',
     skeleton: () => `<div class="cards">${'<div class="card"><div class="skeleton" style="width:60%"></div><div class="skeleton" style="height:28px;margin-top:10px;width:40%"></div></div>'.repeat(4)}</div>` + skeleton(4),
     async load() {
-      const s = await w.API.dashboard();
+      const [s, att] = await Promise.all([w.API.dashboard(), w.API.attendeeStats()]);
       if (!s) return `<div class="banner">${ICONS.alert}
           <div><strong>Supabase n’est pas encore connecté</strong>
           <p>Ouvrez <code>admin/js/config.js</code> et renseignez <code>SUPABASE_URL</code> et <code>SUPABASE_ANON_KEY</code>. Les migrations se trouvent dans <code>supabase/migrations/</code>.</p></div>
@@ -82,7 +82,7 @@
 
       return `<div class="cards">
           ${kpi('Événements à venir', s.upcoming_events)}
-          ${kpi('Billets vendus', s.tickets_sold)}
+          ${kpi('Joueurs inscrits', att ? att.total : 0, att ? att.paid + ' paiement(s) reçu(s) · ' + fmtMoney(att.cash) : '')}
           ${kpi('Réservations à venir', s.upcoming_bookings)}
           ${kpi('Encaissé ce mois', fmtMoney(s.revenue_month_cents), fmtMoney(s.revenue_total_cents) + ' au total')}
         </div>
@@ -102,7 +102,7 @@
            { id:'draft', label:'Brouillons' }, { id:'past', label:'Passés' }],
     action: { id:'create-event', label:'Créer un événement' },
     head: ['Événement', 'Date', 'Statut', { label:'Inscrits', num:true },
-           { label:'Billets', num:true }, { label:'CA', num:true }],
+           { label:'Billets', num:true }, { label:'CA', num:true }, ''],
     fetch: (s) => w.API.events(s.tab === 'all' ? null : s.tab, s.q),
     emptyText: 'Créez votre premier événement : billetterie ou simple inscription.',
     row: (e) => `<tr data-nav="#/events/edit/${esc(e.id)}">
@@ -117,6 +117,7 @@
         <td class="num">${e.attendees_count}</td>
         <td class="num">${e.tickets_sold}${e.tickets_available ? ` <span class="cell-sub">/ ${e.tickets_sold + e.tickets_available}</span>` : ''}</td>
         <td class="num">${esc(fmtMoney(e.revenue_cents))}</td>
+        <td><a class="btn btn-ghost btn-sm" href="#/events/participants/${esc(e.id)}">Participants</a></td>
       </tr>`
   });
 

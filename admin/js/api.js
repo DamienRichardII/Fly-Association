@@ -73,6 +73,16 @@
       return data;
     },
 
+    async attendeeStats() {
+      if (!client) return null;
+      const { data, error } = await client.from('event_attendees')
+        .select('paid, status, event_ticket_types(price_cents)').neq('status', 'cancelled');
+      if (error) throw error;
+      const paid = data.filter(r => r.paid);
+      return { total: data.length, paid: paid.length,
+        cash: paid.reduce((n, r) => n + (r.event_ticket_types?.price_cents || 0), 0) };
+    },
+
     /* ── Rubriques (lecture seule en Phase A) ── */
     events: (state, search) => select('events_overview', {
       filters: state && state !== 'all' ? [['effective_state', 'eq', state]] : [],
@@ -86,6 +96,17 @@
     saveEvent: (id, event, tickets) => rpc('admin_save_event', {
       p_id: id || null, p_event: event, p_tickets: tickets || []
     }),
+    eventAttendees: (eventId) => select('event_attendees', {
+      columns: '*, contacts(first_name,last_name,email,phone), event_ticket_types(name,price_cents)',
+      filters: [['event_id', 'eq', eventId]], order: { column: 'registered_at', ascending: true }, limit: 1000
+    }),
+    addAttendee: (eventId, a) => rpc('admin_add_attendee', {
+      p_event: eventId, p_ticket_type: a.ticket_type_id || null, p_first: a.first_name, p_last: a.last_name,
+      p_email: a.email, p_phone: a.phone || null, p_notes: a.notes || null
+    }),
+    updateAttendee: (id, a) => rpc('admin_update_attendee', {
+      p_id: id, p_status: a.status, p_paid: !!a.paid, p_payment_method: a.payment_method || null, p_notes: a.notes || null
+    }),
     async deleteTicketTypes(ids) {
       if (!client) throw new Error('Supabase non connecté');
       const { error } = await client.from('event_ticket_types').delete().in('id', ids);
@@ -98,6 +119,11 @@
       if (error) throw new Error(error.message);
       return client.storage.from('media').getPublicUrl(path).data.publicUrl;
     },
+    messages: (state) => select('contact_messages', {
+      filters: state === 'open' ? [['handled', 'eq', false]] : [],
+      order: { column: 'created_at', ascending: false }
+    }),
+    setMessageHandled: (id, handled) => rpc('admin_set_message_handled', { p_id: id, p_handled: handled }),
     contacts: (search, tag) => select('contacts_overview', {
       filters: tag && tag !== 'all' ? [['tags', 'cs', `{${tag}}`]] : [],
       search: { columns: ['first_name', 'last_name', 'email'], value: search },

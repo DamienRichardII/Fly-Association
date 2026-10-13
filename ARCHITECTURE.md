@@ -304,3 +304,14 @@ sur les 9 pages publiques.
 - `admin/js/events-wizard.js` : assistant 5 étapes (Type → Infos & lieu → Inscriptions/Billets → Visuel & texte → Publication), création et édition (`#/events/edit/:id`). Écriture via la RPC `admin_save_event`; images dans le bucket public `media`.
 - Public : `assets/js/events.js` lit les événements `published` à venir (RLS `public_read`) et alimente `evenements.html` (fiches complètes + tarifs) et l'accueil (3 prochains). Sans événement, l'état vide statique reste affiché.
 - Billets payants : pas de paiement en ligne tant que le prestataire n'est pas choisi ; le bouton mène à `contact.html?sujet=…`.
+
+## Phase C bis — Inscriptions & participants (migration 0010)
+- `register_for_event()` (publique, anon) : pré-inscription depuis `evenements.html`; contrôle publication, quotas par catégorie, doublons, e-mail; crée/retrouve le contact CRM.
+- `admin_add_attendee()` / `admin_update_attendee()` : ajout manuel, statut (inscrit/confirmé/présent/absent/annulé), paiement + moyen, notes.
+- Admin : `#/events/participants/:id` (liste, filtres par catégorie / « à régler », recherche, pointage, export CSV), accessible depuis la liste des événements et l'assistant.
+- Premier usage : FLY OR DIE 1V1 (31 oct. 2026, Gymnase Bertrand Dauvin) — créé en brouillon, 2 catégories à 10 €.
+- Note : `admin_save_event` a été créée directement dans Supabase et n'est pas versionnée dans `supabase/migrations/`.
+
+## Correctifs (migration 0011)
+- Formulaire de contact du site branché sur `submit_contact_message()` (message + fiche CRM) ; nouvelle rubrique admin *Messages* (`admin/js/messages.js`).
+- `admin_set_contact_tags` / `admin_merge_contacts` (0009) et `admin_save_event` versionnée dans `0011_repair_and_contact.sql`. Les fonctions sont idempotentes (`create or replace`).

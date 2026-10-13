@@ -227,3 +227,8 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
   .wz-recap img{width:100%}
   .wz-nav{position:sticky;bottom:0;background:var(--ice);padding:10px 0}
 }
+
+/* Paiement effectué : Oui / Non */
+select.pay{font-weight:700;min-width:84px}
+select.pay-yes{background:#E3F4EA;color:#1E7A46;border-color:#BFE3CE}
+select.pay-no{background:#FCEBEA;color:#B3261E;border-color:#F3C9C6}
