@@ -86,8 +86,7 @@
 
       <div class="form-card reveal d1">
         <h3>Envoyez-nous un message</h3>
-        <!-- TODO : brancher l'endpoint du formulaire (Formspree, EmailJS ou back-end) sur l'attribut action -->
-        <form action="#" method="post">
+        <form id="contactForm" action="#" method="post">
           <div class="form-row">
             <input type="text" name="nom" placeholder="Nom" required>
             <input type="text" name="prenom" placeholder="Prénom" required>
@@ -98,7 +97,7 @@
           </div>
           <textarea name="message" placeholder="Votre message…" required></textarea>
           <button type="submit" class="btn btn-navy">Envoyer le message</button>
-          <p class="form-note">Le formulaire sera actif dès la mise en ligne de l'adresse e-mail de l'association. En attendant, écrivez-nous en message privé sur les réseaux.</p>
+          <p class="form-note" id="contactMsg" role="status">L’équipe du Fly vous répond rapidement.</p>
         </form>
       </div>
     </div>

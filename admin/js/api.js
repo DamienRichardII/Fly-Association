@@ -109,6 +109,11 @@
       if (error) throw new Error(error.message);
       return client.storage.from('media').getPublicUrl(path).data.publicUrl;
     },
+    messages: (state) => select('contact_messages', {
+      filters: state === 'open' ? [['handled', 'eq', false]] : [],
+      order: { column: 'created_at', ascending: false }
+    }),
+    setMessageHandled: (id, handled) => rpc('admin_set_message_handled', { p_id: id, p_handled: handled }),
     contacts: (search, tag) => select('contacts_overview', {
       filters: tag && tag !== 'all' ? [['tags', 'cs', `{${tag}}`]] : [],
       search: { columns: ['first_name', 'last_name', 'email'], value: search },

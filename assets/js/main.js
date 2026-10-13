@@ -69,3 +69,28 @@
   var v = new URLSearchParams(location.search).get('sujet');
   if (f && v && !f.value) f.value = v.slice(0, 120);
 })();
+
+/* Contact : envoie le message dans Supabase (visible dans le back-office, rubrique Messages) */
+(function () {
+  var f = document.getElementById('contactForm');
+  if (!f) return;
+  var URL_ = 'https://wpwqmiefneagvudisapn.supabase.co';
+  var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwd3FtaWVmbmVhZ3Z1ZGlzYXBuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4MTA3MzIsImV4cCI6MjEwNzM4NjczMn0.nc-8o45mwTTaglMLZCYytGguWTS7zGhPp6QIF20vxYY';
+  var msg = document.getElementById('contactMsg');
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = f.querySelector('button[type=submit]'), v = function (n) { return f.elements[n].value; };
+    btn.disabled = true; msg.style.color = ''; msg.textContent = 'Envoi…';
+    fetch(URL_ + '/rest/v1/rpc/submit_contact_message', {
+      method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_first: v('prenom'), p_last: v('nom'), p_email: v('email'), p_subject: v('sujet'), p_message: v('message') })
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (r) {
+        if (!r.ok) throw new Error((r.j && r.j.message) || 'Envoi impossible');
+        f.reset(); msg.style.color = '#1E7A46';
+        msg.textContent = 'Message envoyé ! L’équipe du Fly vous répond rapidement.';
+      })
+      .catch(function (err) { msg.style.color = '#B3261E'; msg.textContent = err.message + ' — vous pouvez aussi nous écrire en message privé sur les réseaux.'; })
+      .then(function () { btn.disabled = false; });
+  });
+})();

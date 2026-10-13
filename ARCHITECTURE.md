@@ -311,3 +311,7 @@ sur les 9 pages publiques.
 - Admin : `#/events/participants/:id` (liste, filtres par catégorie / « à régler », recherche, pointage, export CSV), accessible depuis la liste des événements et l'assistant.
 - Premier usage : FLY OR DIE 1V1 (31 oct. 2026, Gymnase Bertrand Dauvin) — créé en brouillon, 2 catégories à 10 €.
 - Note : `admin_save_event` a été créée directement dans Supabase et n'est pas versionnée dans `supabase/migrations/`.
+
+## Correctifs (migration 0011)
+- Formulaire de contact du site branché sur `submit_contact_message()` (message + fiche CRM) ; nouvelle rubrique admin *Messages* (`admin/js/messages.js`).
+- `admin_set_contact_tags` / `admin_merge_contacts` (0009) et `admin_save_event` versionnée dans `0011_repair_and_contact.sql`. Les fonctions sont idempotentes (`create or replace`).
