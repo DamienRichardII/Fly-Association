@@ -46,7 +46,7 @@
         return '<option value="' + esc(t.id) + '">' + esc(t.name) + (t.is_free ? '' : ' — ' + euro(t.price_cents)) + '</option>'; }).join('') + '</select>' : '') +
       '<div class="event-form-row"><input name="first" placeholder="Prénom" required><input name="last" placeholder="Nom" required></div>' +
       '<input name="email" type="email" placeholder="Email" required><input name="phone" type="tel" placeholder="Téléphone">' +
-      '<button class="btn btn-navy btn-sm" type="submit">Valider mon inscription</button>' +
+      '<button class="btn btn-navy btn-sm" type="submit">Envoyer mon inscription</button>' +
       '<p class="event-form-msg" role="status"></p></form>';
     return '<article class="event-card" id="' + esc(ev.slug) + '" data-open="' + (ev.kind === 'ticketed' || ev.kind === 'rsvp' ? '1' : '') + '">' +
       (ev.cover_url ? '<img class="event-cover" src="' + esc(ev.cover_url) + '" alt="" loading="lazy">' : '') +
@@ -75,7 +75,7 @@
       .then(function (r) {
         if (!r.ok) throw new Error((r.j && r.j.message) || 'Inscription impossible');
         f.reset(); msg.className = 'event-form-msg ok';
-        msg.textContent = 'Inscription enregistrée ! L’équipe du Fly vous recontacte pour la confirmation et le règlement.';
+        msg.textContent = 'Inscription envoyée ! Elle sera validée par l’équipe du Fly, qui vous recontacte pour la confirmation et le règlement.';
       })
       .catch(function (err) { msg.className = 'event-form-msg err'; msg.textContent = err.message; })
       .then(function () { btn.disabled = false; });

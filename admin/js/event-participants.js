@@ -20,7 +20,8 @@
     const q = ctx.q.toLowerCase();
     return ctx.rows.filter(r => {
       if (ctx.filter === 'unpaid' && (r.paid || r.status === 'cancelled')) return false;
-      if (ctx.filter !== 'all' && ctx.filter !== 'unpaid' && r.ticket_type_id !== ctx.filter) return false;
+      if (ctx.filter === 'pending' && r.status !== 'registered') return false;
+      if (ctx.filter !== 'all' && ctx.filter !== 'unpaid' && ctx.filter !== 'pending' && r.ticket_type_id !== ctx.filter) return false;
       if (!q) return true;
       return [nameOf(r), r.contacts?.email, r.contacts?.phone].join(' ').toLowerCase().includes(q);
     });
@@ -38,7 +39,7 @@
     }).join('');
     return `<div class="cards">
       <div class="card"><div class="kpi-label">Inscrits</div><div class="kpi-value">${active.length}</div>
-        <div class="kpi-hint">${present} présent${present > 1 ? 's' : ''}</div></div>
+        <div class="kpi-hint">${active.filter(r => r.status === 'registered').length} à valider · ${present} présent${present > 1 ? 's' : ''}</div></div>
       ${byType}
       <div class="card"><div class="kpi-label">Participations payées</div><div class="kpi-value">${paid.length}</div>
         <div class="kpi-hint">${esc(fmtMoney(cash))} encaissés · ${active.length - paid.length} à régler</div></div>
@@ -49,7 +50,7 @@
     const rows = visible();
     if (!rows.length) return empty({ title: 'Aucun participant', text: ctx.rows.length ? 'Aucun résultat pour ce filtre.' : 'Les inscriptions du site et celles ajoutées à la main apparaîtront ici.' });
     return `<div class="table-wrap"><div class="table-scroll"><table>
-      <thead><tr><th>Joueur</th><th>Catégorie</th><th>Paiement effectué</th><th>Moyen de paiement</th><th>Statut</th><th>Notes</th><th>Inscrit le</th></tr></thead>
+      <thead><tr><th>Joueur</th><th>Catégorie</th><th>Paiement effectué</th><th>Moyen de paiement</th><th>Validation</th><th>Notes</th><th>Inscrit le</th></tr></thead>
       <tbody>${rows.map(r => `<tr data-id="${esc(r.id)}"${r.status === 'cancelled' ? ' style="opacity:.5"' : ''}>
         <td><div class="cell-main">${esc(nameOf(r))}</div>
           <div class="cell-sub">${esc(r.contacts?.email || '')}${r.contacts?.phone ? ' · ' + esc(r.contacts.phone) : ''}</div></td>
@@ -57,7 +58,11 @@
         <td><select class="filter pay ${r.paid ? 'pay-yes' : 'pay-no'}" data-att="paid" aria-label="Paiement effectué">
           <option value="0"${r.paid ? '' : ' selected'}>Non</option><option value="1"${r.paid ? ' selected' : ''}>Oui</option></select></td>
         <td><select class="filter" data-att="payment_method" ${r.paid ? '' : 'disabled'}>${opts(METHODS, r.payment_method || '')}</select></td>
-        <td><select class="filter" data-att="status">${opts(STATUS, r.status)}</select></td>
+        <td>${r.status === 'registered'
+          ? `<div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge badge-wait">À valider</span>
+              <button class="btn btn-navy btn-sm" data-validate="confirmed">Valider</button>
+              <button class="btn btn-ghost btn-sm" data-validate="cancelled">Refuser</button></div>`
+          : `<select class="filter" data-att="status">${opts(STATUS, r.status)}</select>`}</td>
         <td><input type="text" data-att="notes" value="${esc(r.notes || '')}" placeholder="Note" style="min-width:140px"></td>
         <td class="cell-sub">${esc(fmtDate(r.registered_at, true))}${r.source === 'admin' ? ' · ajouté par l’équipe' : ''}</td>
       </tr>`).join('')}</tbody></table></div>
@@ -121,7 +126,7 @@
         const { ev, head } = r;
         const [tk, at] = await Promise.all([w.API.eventTickets(ev.id), w.API.eventAttendees(ev.id)]);
         ctx = { event: ev, tickets: tk.data, rows: at.data, filter: 'all', q: '' };
-        const filters = [['all', 'Tous'], ...ctx.tickets.map(t => [t.id, t.name.replace('Participation — ', '')]), ['unpaid', 'Paiement non effectué']];
+        const filters = [['all', 'Tous'], ...ctx.tickets.map(t => [t.id, t.name.replace('Participation — ', '')]), ['pending', 'À valider'], ['unpaid', 'Paiement non effectué']];
         return `<div class="toolbar">${head}
             <div style="margin-left:auto"></div>
             <a class="btn btn-ghost btn-sm" href="#/events/edit/${esc(ev.id)}">Modifier l’événement</a>
@@ -143,6 +148,15 @@
           content.querySelectorAll('[data-att-filter]').forEach(x => x.classList.toggle('active', x === b));
           redraw();
         }));
+        content.querySelector('#attTable')?.addEventListener('click', async (e) => {
+          const b = e.target.closest('[data-validate]'); if (!b) return;
+          const r = ctx.rows.find(x => x.id === b.closest('tr').dataset.id);
+          if (b.dataset.validate === 'cancelled' &&
+              !(await w.UI.confirmDialog({ title: 'Refuser cette inscription ?', text: `${nameOf(r)} ne sera plus compté parmi les inscrits.`, confirmLabel: 'Refuser' }))) return;
+          const prev = r.status; r.status = b.dataset.validate;
+          try { await w.API.updateAttendee(r.id, r); redraw(); toast(r.status === 'confirmed' ? 'Inscription validée' : 'Inscription refusée', nameOf(r), ''); }
+          catch (err) { r.status = prev; redraw(); toast('Action refusée', err.message, 'err'); }
+        });
         content.querySelector('#attTable')?.addEventListener('change', async (e) => {
           const tr = e.target.closest('tr[data-id]'); if (!tr || !e.target.dataset.att) return;
           const r = ctx.rows.find(x => x.id === tr.dataset.id);
