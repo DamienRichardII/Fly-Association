@@ -10,6 +10,7 @@
     { id:'dashboard',     label:'Tableau de bord',    icon:'grid' },
     { group: 'Activité' },
     { id:'events',        label:'Événements',         icon:'calendar' },
+    { id:'players',       label:'Joueurs inscrits',   icon:'users' },
     { id:'bookings',      label:'Réservations',       icon:'clock' },
     { group: 'Commerce' },
     { id:'sales',         label:'Ventes',             icon:'chart' },

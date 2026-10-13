@@ -49,14 +49,15 @@
     const rows = visible();
     if (!rows.length) return empty({ title: 'Aucun participant', text: ctx.rows.length ? 'Aucun résultat pour ce filtre.' : 'Les inscriptions du site et celles ajoutées à la main apparaîtront ici.' });
     return `<div class="table-wrap"><div class="table-scroll"><table>
-      <thead><tr><th>Participant</th><th>Catégorie</th><th>Statut</th><th>Payé</th><th>Moyen</th><th>Notes</th><th>Inscrit le</th></tr></thead>
+      <thead><tr><th>Joueur</th><th>Catégorie</th><th>Paiement effectué</th><th>Moyen de paiement</th><th>Statut</th><th>Notes</th><th>Inscrit le</th></tr></thead>
       <tbody>${rows.map(r => `<tr data-id="${esc(r.id)}"${r.status === 'cancelled' ? ' style="opacity:.5"' : ''}>
         <td><div class="cell-main">${esc(nameOf(r))}</div>
           <div class="cell-sub">${esc(r.contacts?.email || '')}${r.contacts?.phone ? ' · ' + esc(r.contacts.phone) : ''}</div></td>
         <td>${esc(r.event_ticket_types?.name?.replace('Participation — ', '') || '—')}</td>
-        <td><select class="filter" data-att="status">${opts(STATUS, r.status)}</select></td>
-        <td><input type="checkbox" data-att="paid" ${r.paid ? 'checked' : ''} aria-label="Payé"></td>
+        <td><select class="filter pay ${r.paid ? 'pay-yes' : 'pay-no'}" data-att="paid" aria-label="Paiement effectué">
+          <option value="0"${r.paid ? '' : ' selected'}>Non</option><option value="1"${r.paid ? ' selected' : ''}>Oui</option></select></td>
         <td><select class="filter" data-att="payment_method" ${r.paid ? '' : 'disabled'}>${opts(METHODS, r.payment_method || '')}</select></td>
+        <td><select class="filter" data-att="status">${opts(STATUS, r.status)}</select></td>
         <td><input type="text" data-att="notes" value="${esc(r.notes || '')}" placeholder="Note" style="min-width:140px"></td>
         <td class="cell-sub">${esc(fmtDate(r.registered_at, true))}${r.source === 'admin' ? ' · ajouté par l’équipe' : ''}</td>
       </tr>`).join('')}</tbody></table></div>
@@ -107,53 +108,76 @@
     document.body.appendChild(back);
   }
 
-  V['events/participants'] = {
-    title: 'Participants',
-    skeleton: () => skeleton(6),
-    toolbar: () => '',
-    async load(state) {
-      const id = state.params.id;
-      const [ev, tk, at] = await Promise.all([w.API.event(id), w.API.eventTickets(id), w.API.eventAttendees(id)]);
-      if (!ev) return empty({ title: 'Événement introuvable', text: 'Il a peut-être été supprimé.' });
-      ctx = { event: ev, tickets: tk.data, rows: at.data, filter: 'all', q: '' };
-      const filters = [['all', 'Tous'], ...ctx.tickets.map(t => [t.id, t.name.replace('Participation — ', '')]), ['unpaid', 'À régler']];
-      return `<div class="toolbar">
-          <a class="btn btn-ghost btn-sm" href="#/events">${ICONS.back} Événements</a>
-          <h2 style="font-size:1.25rem;margin:0 8px">${esc(ev.title)} <span class="cell-sub">${esc(fmtDate(ev.start_at, true))}</span></h2>
-          <div style="margin-left:auto"></div>
-          <a class="btn btn-ghost btn-sm" href="#/events/edit/${esc(id)}">Modifier l’événement</a>
-          <button class="btn btn-ghost btn-sm" data-action="export-attendees">Exporter (CSV)</button>
-          ${ctx.tickets.length || ev.kind === 'rsvp' ? `<button class="btn btn-navy btn-sm" data-action="add-attendee">${ICONS.plus} Ajouter</button>` : ''}
-        </div>
-        <div id="attStats">${stats()}</div>
-        <div class="toolbar">
-          <div class="search">${ICONS.search}<input type="search" id="attSearch" placeholder="Nom, email, téléphone…"></div>
-          <div class="tabs">${filters.map(([v, l]) => `<button class="tab${v === 'all' ? ' active' : ''}" data-att-filter="${esc(v)}">${esc(l)}</button>`).join('')}</div>
-        </div>
-        <div id="attTable">${tableHtml()}</div>`;
-    },
-    afterRender(state, content) {
-      const redraw = () => { content.querySelector('#attTable').innerHTML = tableHtml(); content.querySelector('#attStats').innerHTML = stats(); };
-      content.querySelector('#attSearch')?.addEventListener('input', (e) => { ctx.q = e.target.value.trim(); redraw(); });
-      content.querySelectorAll('[data-att-filter]').forEach(b => b.addEventListener('click', () => {
-        ctx.filter = b.dataset.attFilter;
-        content.querySelectorAll('[data-att-filter]').forEach(x => x.classList.toggle('active', x === b));
-        redraw();
-      }));
-      content.querySelector('#attTable').addEventListener('change', async (e) => {
-        const tr = e.target.closest('tr[data-id]'); if (!tr || !e.target.dataset.att) return;
-        const r = ctx.rows.find(x => x.id === tr.dataset.id);
-        const prev = { ...r };
-        r[e.target.dataset.att] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        if (r.paid && !r.payment_method) r.payment_method = 'especes';
-        try { await w.API.updateAttendee(r.id, r); redraw(); }
-        catch (err) { Object.assign(r, prev); redraw(); toast('Modification refusée', err.message, 'err'); }
-      });
-    },
-    onAction(action, el, state, { reload }) {
-      if (action === 'export-attendees') { csv(); return true; }
-      if (action === 'add-attendee') { addModal(reload); return true; }
-      return false;
-    }
-  };
+  /* Fabrique commune : « Participants » d'un événement précis, et
+     rubrique « Joueurs inscrits » (sélecteur d'événement, prochain par défaut). */
+  function view(title, resolve) {
+    return {
+      title,
+      skeleton: () => skeleton(6),
+      toolbar: () => '',
+      async load(state) {
+        const r = await resolve(state);
+        if (r.html) return r.html;
+        const { ev, head } = r;
+        const [tk, at] = await Promise.all([w.API.eventTickets(ev.id), w.API.eventAttendees(ev.id)]);
+        ctx = { event: ev, tickets: tk.data, rows: at.data, filter: 'all', q: '' };
+        const filters = [['all', 'Tous'], ...ctx.tickets.map(t => [t.id, t.name.replace('Participation — ', '')]), ['unpaid', 'Paiement non effectué']];
+        return `<div class="toolbar">${head}
+            <div style="margin-left:auto"></div>
+            <a class="btn btn-ghost btn-sm" href="#/events/edit/${esc(ev.id)}">Modifier l’événement</a>
+            <button class="btn btn-ghost btn-sm" data-action="export-attendees">Exporter (CSV)</button>
+            <button class="btn btn-navy btn-sm" data-action="add-attendee">${ICONS.plus} Ajouter un joueur</button>
+          </div>
+          <div id="attStats">${stats()}</div>
+          <div class="toolbar">
+            <div class="search">${ICONS.search}<input type="search" id="attSearch" placeholder="Nom, email, téléphone…"></div>
+            <div class="tabs">${filters.map(([v, l]) => `<button class="tab${v === 'all' ? ' active' : ''}" data-att-filter="${esc(v)}">${esc(l)}</button>`).join('')}</div>
+          </div>
+          <div id="attTable">${tableHtml()}</div>`;
+      },
+      afterRender(state, content) {
+        const redraw = () => { content.querySelector('#attTable').innerHTML = tableHtml(); content.querySelector('#attStats').innerHTML = stats(); };
+        content.querySelector('#attSearch')?.addEventListener('input', (e) => { ctx.q = e.target.value.trim(); redraw(); });
+        content.querySelectorAll('[data-att-filter]').forEach(b => b.addEventListener('click', () => {
+          ctx.filter = b.dataset.attFilter;
+          content.querySelectorAll('[data-att-filter]').forEach(x => x.classList.toggle('active', x === b));
+          redraw();
+        }));
+        content.querySelector('#attTable')?.addEventListener('change', async (e) => {
+          const tr = e.target.closest('tr[data-id]'); if (!tr || !e.target.dataset.att) return;
+          const r = ctx.rows.find(x => x.id === tr.dataset.id);
+          const prev = { ...r };
+          r[e.target.dataset.att] = e.target.dataset.att === 'paid' ? e.target.value === '1' : e.target.value;
+          if (r.paid && !r.payment_method) r.payment_method = 'especes';
+          if (!r.paid) r.payment_method = null;
+          try { await w.API.updateAttendee(r.id, r); redraw(); }
+          catch (err) { Object.assign(r, prev); redraw(); toast('Modification refusée', err.message, 'err'); }
+        });
+      },
+      onAction(action, el, state, { reload }) {
+        if (action === 'export-attendees') { csv(); return true; }
+        if (action === 'add-attendee') { addModal(reload); return true; }
+        return false;
+      }
+    };
+  }
+
+  V['events/participants'] = view('Participants', async (state) => {
+    const ev = await w.API.event(state.params.id);
+    if (!ev) return { html: empty({ title: 'Événement introuvable', text: 'Il a peut-être été supprimé.' }) };
+    return { ev, head: `<a class="btn btn-ghost btn-sm" href="#/events">${ICONS.back} Événements</a>
+      <h2 style="font-size:1.25rem;margin:0 8px">${esc(ev.title)} <span class="cell-sub">${esc(fmtDate(ev.start_at, true))}</span></h2>` };
+  });
+
+  V.players = view('Joueurs inscrits', async (state) => {
+    const res = await w.API.events('all', '');
+    if (res.notConfigured) return { html: empty({ title: 'Supabase n’est pas encore connecté', text: 'Renseignez les clés dans admin/js/config.js.' }) };
+    const list = res.data.filter(e => e.effective_state !== 'cancelled');
+    if (!list.length) return { html: empty({ title: 'Aucun événement', text: 'Créez et publiez un événement : ses joueurs inscrits apparaîtront ici.', action: { id: 'create-event', label: 'Créer un événement' } }) };
+    // par défaut : le prochain événement à venir, sinon le plus récent
+    const upcoming = list.filter(e => e.effective_state === 'published').sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+    const ev = list.find(e => e.id === state.event) || upcoming[0] || list[0];
+    return { ev, head: `<select class="filter" data-filter="event" aria-label="Événement" style="max-width:360px">
+        ${list.map(e => `<option value="${esc(e.id)}"${e.id === ev.id ? ' selected' : ''}>${esc(e.title)} — ${esc(fmtDate(e.start_at))}</option>`).join('')}</select>` };
+  });
 })(window);
