@@ -232,3 +232,12 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 select.pay{font-weight:700;min-width:84px}
 select.pay-yes{background:#E3F4EA;color:#1E7A46;border-color:#BFE3CE}
 select.pay-no{background:#FCEBEA;color:#B3261E;border-color:#F3C9C6}
+
+/* Connexion : œil, lien mot de passe oublié, message de succès */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:44px}
+.pw-eye{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:8px;display:grid;place-items:center}
+.pw-eye:hover{color:var(--navy)}
+.link-btn{display:block;margin:14px auto 0;background:none;border:0;color:var(--navy);font:inherit;font-size:.88rem;text-decoration:underline;cursor:pointer}
+.form-ok{background:#E3F4EA;color:#1E7A46;border-radius:8px;padding:10px 12px;font-size:.88rem;margin-bottom:14px}
+.login-card[hidden]{display:none}

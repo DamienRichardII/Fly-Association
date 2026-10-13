@@ -27,10 +27,28 @@
     </div>
     <div class="field">
       <label for="password">Mot de passe</label>
-      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <div class="pw-wrap">
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+        <button type="button" class="pw-eye" data-eye="password" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+      </div>
     </div>
 
     <button type="submit" class="btn btn-navy" id="submit">Se connecter</button>
+    <button type="button" class="link-btn" id="forgot">Mot de passe oublié ?</button>
+  </form>
+
+  <form class="login-card" id="resetForm" hidden>
+    <img src="../assets/img/logo-navy.png" alt="Le Fly Association">
+    <h1>Mot de passe oublié</h1>
+    <p class="sub">Indiquez votre email : nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
+    <div class="form-error" id="resetError" hidden></div>
+    <div class="form-ok" id="resetOk" hidden></div>
+    <div class="field">
+      <label for="resetEmail">Email</label>
+      <input type="email" id="resetEmail" autocomplete="username" required>
+    </div>
+    <button type="submit" class="btn btn-navy" id="resetSubmit">Envoyer le lien</button>
+    <button type="button" class="link-btn" id="backLogin">Retour à la connexion</button>
   </form>
 </div>
 
@@ -38,6 +56,7 @@
 <script src="js/config.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/api.js"></script>
+<script src="js/pw-eye.js"></script>
 <script>
 (function () {
   var form = document.getElementById('loginForm');
@@ -53,6 +72,29 @@
     // Déjà connecté : on va directement au dashboard
     window.API.currentUser().then(function (u) { if (u) location.replace('index.html'); });
   }
+
+  /* Mot de passe oublié */
+  var reset = document.getElementById('resetForm');
+  function show(resetMode) { form.hidden = resetMode; reset.hidden = !resetMode;
+    if (resetMode) document.getElementById('resetEmail').value = form.email.value; }
+  document.getElementById('forgot').addEventListener('click', function () { show(true); });
+  document.getElementById('backLogin').addEventListener('click', function () { show(false); });
+  reset.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var rerr = document.getElementById('resetError'), rok = document.getElementById('resetOk'), rb = document.getElementById('resetSubmit');
+    rerr.hidden = true; rok.hidden = true; rb.disabled = true;
+    try {
+      var r = await window.API.resetPassword(document.getElementById('resetEmail').value.trim(),
+        location.origin + location.pathname.replace(/login\.html$/, '') + 'reset.html');
+      if (r.error) throw r.error;
+      rok.textContent = 'Si ce compte existe, un email vient d’être envoyé. Ouvrez le lien qu’il contient (pensez aux spams).';
+      rok.hidden = false;
+    } catch (x) {
+      rerr.textContent = /rate limit|seconds/i.test(x.message) ? 'Trop de demandes : patientez une minute puis réessayez.' : x.message;
+      rerr.hidden = false;
+    }
+    rb.disabled = false;
+  });
 
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
