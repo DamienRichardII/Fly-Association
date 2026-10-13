@@ -73,6 +73,16 @@
       return data;
     },
 
+    async attendeeStats() {
+      if (!client) return null;
+      const { data, error } = await client.from('event_attendees')
+        .select('paid, status, event_ticket_types(price_cents)').neq('status', 'cancelled');
+      if (error) throw error;
+      const paid = data.filter(r => r.paid);
+      return { total: data.length, paid: paid.length,
+        cash: paid.reduce((n, r) => n + (r.event_ticket_types?.price_cents || 0), 0) };
+    },
+
     /* ── Rubriques (lecture seule en Phase A) ── */
     events: (state, search) => select('events_overview', {
       filters: state && state !== 'all' ? [['effective_state', 'eq', state]] : [],

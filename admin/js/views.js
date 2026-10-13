@@ -69,7 +69,7 @@
     toolbar: () => '',
     skeleton: () => `<div class="cards">${'<div class="card"><div class="skeleton" style="width:60%"></div><div class="skeleton" style="height:28px;margin-top:10px;width:40%"></div></div>'.repeat(4)}</div>` + skeleton(4),
     async load() {
-      const s = await w.API.dashboard();
+      const [s, att] = await Promise.all([w.API.dashboard(), w.API.attendeeStats()]);
       if (!s) return `<div class="banner">${ICONS.alert}
           <div><strong>Supabase n’est pas encore connecté</strong>
           <p>Ouvrez <code>admin/js/config.js</code> et renseignez <code>SUPABASE_URL</code> et <code>SUPABASE_ANON_KEY</code>. Les migrations se trouvent dans <code>supabase/migrations/</code>.</p></div>
@@ -82,7 +82,7 @@
 
       return `<div class="cards">
           ${kpi('Événements à venir', s.upcoming_events)}
-          ${kpi('Billets vendus', s.tickets_sold)}
+          ${kpi('Joueurs inscrits', att ? att.total : 0, att ? att.paid + ' paiement(s) reçu(s) · ' + fmtMoney(att.cash) : '')}
           ${kpi('Réservations à venir', s.upcoming_bookings)}
           ${kpi('Encaissé ce mois', fmtMoney(s.revenue_month_cents), fmtMoney(s.revenue_total_cents) + ' au total')}
         </div>
