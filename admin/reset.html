@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Nouveau mot de passe · Back-office Le Fly</title>
+<link rel="icon" href="../assets/img/logo-navy.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<div class="login-page">
+  <form class="login-card" id="pwForm">
+    <img src="../assets/img/logo-navy.png" alt="Le Fly Association">
+    <h1>Nouveau mot de passe</h1>
+    <p class="sub" id="sub">Vérification du lien…</p>
+    <div class="form-error" id="error" hidden></div>
+    <div class="form-ok" id="ok" hidden></div>
+    <div id="fields" hidden>
+      <div class="field">
+        <label for="pw1">Nouveau mot de passe</label>
+        <div class="pw-wrap">
+          <input type="password" id="pw1" autocomplete="new-password" minlength="8" required>
+          <button type="button" class="pw-eye" data-eye="pw1" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="pw2">Confirmer le mot de passe</label>
+        <div class="pw-wrap">
+          <input type="password" id="pw2" autocomplete="new-password" minlength="8" required>
+          <button type="button" class="pw-eye" data-eye="pw2" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-navy" id="submit">Enregistrer</button>
+    </div>
+    <a class="link-btn" href="login.html" id="back" style="text-align:center">Retour à la connexion</a>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script src="js/pw-eye.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ready = false;
+  function ok() { if (ready) return; ready = true; $('sub').textContent = 'Choisissez votre nouveau mot de passe (8 caractères minimum).'; $('fields').hidden = false; }
+  function bad() { if (ready) return; $('sub').textContent = ''; $('error').textContent = 'Lien invalide ou expiré. Redemandez un lien depuis la page de connexion.'; $('error').hidden = false; }
+
+  // Le lien de l'email ouvre cette page avec un jeton de récupération : supabase-js crée la session.
+  window.API.client.auth.onAuthStateChange(function (ev) { if (ev === 'PASSWORD_RECOVERY') ok(); });
+  setTimeout(function () { window.API.currentUser().then(function (u) { u ? ok() : bad(); }); }, 1500);
+
+  $('pwForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    $('error').hidden = true;
+    if ($('pw1').value !== $('pw2').value) { $('error').textContent = 'Les deux mots de passe ne sont pas identiques.'; $('error').hidden = false; return; }
+    $('submit').disabled = true;
+    var r = await window.API.updatePassword($('pw1').value);
+    if (r.error) { $('error').textContent = r.error.message; $('error').hidden = false; $('submit').disabled = false; return; }
+    $('fields').hidden = true; $('sub').textContent = '';
+    $('ok').textContent = 'Mot de passe enregistré. Redirection vers le back-office…'; $('ok').hidden = false;
+    setTimeout(function () { location.replace('index.html'); }, 1500);
+  });
+})();
+</script>
+</body>
+</html>

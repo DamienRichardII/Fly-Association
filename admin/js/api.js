@@ -64,6 +64,8 @@
     },
     signIn: (email, password) => client.auth.signInWithPassword({ email, password }),
     signOut: () => client && client.auth.signOut(),
+    resetPassword: (email, redirectTo) => client.auth.resetPasswordForEmail(email, { redirectTo }),
+    updatePassword: (password) => client.auth.updateUser({ password }),
 
     /* ── Tableau de bord ── */
     async dashboard() {
